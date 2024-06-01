@@ -1,19 +1,7 @@
 library(dplyr)
 library(rlist)
 
-
-folder <- "UCI HAR Dataset"
-if (!file.exists(folder)) {
-  archive_name = "data.zip"
-  download.file(
-    "https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip",
-    archive_name,
-    method = "curl",
-  )
-  unzip(archive_name)
-  file.remove(archive_name)
-}
-
+# Function to process txt file
 
 process_file <- function(filename, func) {
   con <- file(filename, "r")
@@ -27,6 +15,8 @@ process_file <- function(filename, func) {
   
   close(con)
 }
+
+# Function to process files by line
 
 process_dataset <- function(line) {
   line_vals <- strsplit(line, " ")
@@ -46,16 +36,31 @@ process_activity <- function(line) {
   activity <<- append(activity, strsplit(line, " "))
 }
 
-test_dataset_filepath <- paste(folder, "test", "X_test.txt", sep = "/")
-train_dataset_filepath <- paste(folder, "train", "X_train.txt", sep = "/")
-
-test_target_filepath <- paste(folder, "test", "y_test.txt", sep = "/")
-train_target_filepath <- paste(folder, "train", "y_train.txt", sep = "/")
-
-features_filepath <- paste(folder, "features.txt", sep = "/")
-activity_filepath <- paste(folder, "activity_labels.txt", sep = "/")
-
+# Check if data already in memory
 if (!exists("df")) {
+  # Check if data exists
+  
+  folder <- "UCI HAR Dataset"
+  if (!file.exists(folder)) {
+    archive_name = "data.zip"
+    download.file(
+      "https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip",
+      archive_name,
+      method = "curl",
+    )
+    unzip(archive_name)
+    file.remove(archive_name)
+  }
+  
+  test_dataset_filepath <- paste(folder, "test", "X_test.txt", sep = "/")
+  train_dataset_filepath <- paste(folder, "train", "X_train.txt", sep = "/")
+  
+  test_target_filepath <- paste(folder, "test", "y_test.txt", sep = "/")
+  train_target_filepath <- paste(folder, "train", "y_train.txt", sep = "/")
+  
+  features_filepath <- paste(folder, "features.txt", sep = "/")
+  activity_filepath <- paste(folder, "activity_labels.txt", sep = "/")
+  
   features <- list()
   vals <- list()
   targets <- list()
@@ -69,6 +74,8 @@ if (!exists("df")) {
   
   process_file(features_filepath, process_feature)
   process_file(activity_filepath, process_activity)
+  
+  file.remove(folder)
   
   vals <- unlist(vals)
   features <- unlist(features)
@@ -99,3 +106,5 @@ rel_features <- features[grep("(mean)|(std)|(target)", features)]
 rel_df <- df[, rel_features]
 
 merged_df <- merge(rel_df, activity_df, by="target", sort=FALSE)
+
+write.table(as.matrix(merged_df), "data.txt", row.names = FALSE)
